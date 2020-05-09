@@ -9,7 +9,6 @@ class Issue {
     assigned_to,
     status_text,
     id,
-    updated_on,
     open
   ) {
     //REQUIRED
@@ -20,7 +19,7 @@ class Issue {
     this.assigned_to = assigned_to !== '' ? assigned_to : '';
     this.status_text = status_text !== '' ? status_text : '';
     this.created_on = new Date();
-    this.updated_on = updated_on !== '' ? updated_on : new Date();
+    this.updated_on = new Date();
     this.open = open ? true : false;
     this._id = id;
   }
@@ -73,6 +72,19 @@ class Issue {
       })
       .catch((err) => {
         console.log(err);
+      });
+  }
+
+  static deleteById(issueId) {
+    const db = getDb();
+    return db
+      .collection('issues')
+      .deleteOne({ _id: new mongodb.ObjectId(issueId) })
+      .then((result) => {
+        return result;
+      })
+      .catch((err) => {
+        console.log('DELETE API ==> ', err);
       });
   }
 }

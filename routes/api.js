@@ -18,22 +18,32 @@ module.exports = function (app) {
 
     .get(function (req, res) {
       var project = req.params.project;
-      console.log('GET => ', project);
       Issue.fetchAll()
         .then((issues) => {
-          res.json(issues);
+          //if params
+          let params = { ...req.query };
+          if (params.open !== 'undefined') {
+            //cast string into boolean
+            params.open = params.open === 'true' ? true : false;
+          }
+          let filtered = [...issues];
+          for (let key in params) {
+            filtered = filtered.filter((obj) => {
+              return obj[key] === params[key];
+            });
+          }
+          res.json(filtered);
         })
         .catch((err) => console.log(err));
     })
 
     .post(function (req, res) {
-      var project = req.params.project;
       const issue_title = req.body.issue_title;
       const issue_text = req.body.issue_text;
       const created_by = req.body.created_by;
       const assigned_to = req.body.assigned_to;
       const status_text = req.body.status_text;
-      //console.log('POST => ', req.body);
+
       const issue = new Issue(
         issue_title,
         issue_text,
@@ -54,9 +64,8 @@ module.exports = function (app) {
     })
 
     .put(function (req, res) {
-      var project = req.params.project;
-      //console.log('put => ', req.body);
       if (
+        //if there's no new params
         req.body.issue_title === '' &&
         req.body.issue_text === '' &&
         req.body.created_by === '' &&
@@ -71,6 +80,7 @@ module.exports = function (app) {
             return result;
           })
           .then((issue) => {
+            //If the req param is empty then me keep the issue params
             const issue_title =
               req.body.issue_title === ''
                 ? issue.issue_title
@@ -92,7 +102,6 @@ module.exports = function (app) {
                 ? issue.status_text
                 : req.body.status_text;
             const _id = req.body._id;
-            const updated_on = new Date();
             const open = typeof req.body.open === 'undefined' ? false : true;
             const updtIssue = new Issue(
               issue_title,
@@ -101,7 +110,6 @@ module.exports = function (app) {
               assigned_to,
               status_text,
               new ObjectId(_id),
-              updated_on,
               open
             );
             updtIssue
@@ -115,6 +123,17 @@ module.exports = function (app) {
     })
 
     .delete(function (req, res) {
-      var project = req.params.project;
+      const id = req.body._id;
+      if (id) {
+        Issue.deleteById(id).then((result) => {
+          if (result.deletedCount > 0) {
+            res.json(`deleted ${id}`);
+          } else {
+            res.json(`Id not found`);
+          }
+        });
+      } else {
+        res.json('_id error');
+      }
     });
 };
